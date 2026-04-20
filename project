@@ -1,0 +1,222 @@
+import mysql.connector as c
+import pyttsx3
+import datetime
+import speech_recognition as sr
+
+    
+conn = c.connect(
+    host="localhost",
+    user="root",
+    password="root",
+    database="railway_management"
+)
+cursor = conn.cursor()
+
+engine = pyttsx3.init("sapi5")
+voice = engine.getProperty("voices")
+engine.setProperty("voice", voice[0].id)
+
+def speak(audio):
+    engine.say(audio)
+    engine.runAndWait() 
+
+def takeCommand():
+    
+    r = sr.Recognizer()
+     
+    with sr.Microphone() as source:
+        print('Listening....')
+        r.pause_threshold = 0.6
+        audio = r.listen(source)
+        
+    try:
+        print('Recognizing...')
+        query = r.recognize_google(audio, language='en-in')
+        print(f'User said: {query}\n')
+        
+    except Exception as e:
+        print('Say that again please...')
+        return 'None'
+    return query  
+    
+def tell_me():
+    hour = int(datetime.datetime.now().hour)
+    if hour >= 0 and hour < 12:
+        speak("Good Morning sir!")
+    elif hour >= 12 and hour < 18:
+        speak("Good Afternoon sir!")
+    else:
+        speak("Good Evening sir!")
+        
+    speak("Welcome to Railway Management system . Please tell me how can I help you")
+    
+# Create tables if they don't exist
+query = """CREATE TABLE IF NOT EXISTS trains (
+    train_id INT PRIMARY KEY,
+    train_name VARCHAR(50),
+    source VARCHAR(50),
+    destination VARCHAR(50),
+    departure_time TIME,
+    arrival_time TIME,
+    days_of_operation VARCHAR(20)
+)"""
+cursor.execute(query)
+
+query1 = """CREATE TABLE IF NOT EXISTS passengers (
+    passenger_id INT PRIMARY KEY,
+    name VARCHAR(50),
+    age INT CHECK (age > 0),
+    email VARCHAR(100),
+    phone VARCHAR(15)
+)"""
+cursor.execute(query1)
+conn.commit()  # Commit table creation only
+
+print("------------------WELCOME TO RAILWAY MANAGEMENT SYSTEM------------------")
+print("          --------WE ARE HERE TO HELP YOU WITH YOUR JOURNEY---------       ")
+
+
+def passenger_form():
+    print("Enter passenger details:\n")
+    passenger_id = int(input("Enter passenger ID: "))
+    name = input("Enter passenger name: ")
+    age = int(input("Enter passenger age: "))
+    if age < 18:
+        print("Passenger must be at least 18 years old.")
+        speak("Passenger must be at least 18 years old. Please enter a valid age.")
+        return  # Exit the function if age is invalid
+    elif age >= 18:
+        print("Passenger age is valid. Proceeding with the form.")
+        speak("Passenger age is valid. Please continue filling in the form.")
+    
+    email = input("Enter passenger email: ")
+    if email and "@" not in email:
+        print("Invalid email format. Please enter a valid email address.")
+        speak("Invalid email format. Please enter a valid email address.")
+        return  # Exit the function if email is invalid
+    elif email and "@" in email:
+        print("Passenger email is valid. Proceeding with the form.")
+        speak("Passenger email is valid. Please continue filling in the form.")
+    phone = input("Enter passenger phone: ")
+
+    insert_query = "INSERT INTO passengers(passenger_id, name, age, email, phone) VALUES (%s, %s, %s, %s, %s)"
+    values = (passenger_id, name, age, email, phone)
+    cursor.execute(insert_query, values)
+    conn.commit()  # FIX: commit after insert so data is saved
+
+
+def train_form():
+    print("Enter train details:\n")
+    train_id = int(input("Enter train ID: "))
+    train_name = input("Enter train name: ")
+    source = input("Enter source station: ")
+    destination = input("Enter destination station: ")
+    departure_time = input("Enter departure time (HH:MM:SS): ")
+    arrival_time = input("Enter arrival time (HH:MM:SS): ")
+    days_of_operation = input("Enter days of operation (e.g., Mon, Wed, Fri): ")
+
+    insert_query = """INSERT INTO trains(train_id, train_name, source, destination,
+                      departure_time, arrival_time, days_of_operation)
+                      VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+    values = (train_id, train_name, source, destination, departure_time, arrival_time, days_of_operation)
+    cursor.execute(insert_query, values)
+    conn.commit()  # FIX: commit after insert so data is saved
+
+
+def passenger_details():
+    passenger_id = int(input("Enter passenger ID to check details: "))
+    select_query = "SELECT * FROM passengers WHERE passenger_id = %s"
+    cursor.execute(select_query, (passenger_id,))
+    result = cursor.fetchone()
+    
+    if result:
+        print("Passenger Details:")
+        print(f"ID: {result[0]}, Name: {result[1]}, Age: {result[2]}, Email: {result[3]}, Phone: {result[4]}")
+    else:
+        print("Passenger not found.")
+
+def train_details():
+    train_id = int(input("Enter train ID to check details: "))
+    select_query = "SELECT * FROM trains WHERE train_id = %s"
+    cursor.execute(select_query, (train_id,))
+    result = cursor.fetchone()
+    if result:
+        print("Train Details:")
+        print(f"ID: {result[0]}, Name: {result[1]}, Source: {result[2]}, Destination: {result[3]}, "
+              f"Departure Time: {result[4]}, Arrival Time: {result[5]}, Days of Operation: {result[6]}")
+    else:
+        print("Train not found.")
+
+
+def contact_support():
+    print("Contacting customer support...")
+    print("Please wait while we connect you to a support representative.")
+
+
+if __name__ == "__main__":
+    tell_me()  # Greet the user with time-based greeting and welcome message
+    print("\n INDIAN RAILWAYS WELCOMES YOU! \n")
+    while True:
+       
+        
+        # FIX: menu now shows all 6 options correctly
+        print("\nPlease select an option:")
+        print("1. Add a new passenger")
+        print("2. Add a new train")
+        print("3. Check passenger details")
+        print("4. Check train details")
+        print("5. Contact support")
+        print("6. Exit")
+        speak("on your screen you can see the 6 options. Please select one of the options to proceed.")
+        
+
+        choice = input("Enter your choice (1-6): ") 
+           
+        
+        if ['1', '2', '3', '4', '5', '6'].count(choice) == 0:
+            print("Invalid choice. Please try again.")
+            speak("Invalid choice. Please try again.")
+            continue  # FIX: continue to show menu again on invalid input
+        
+
+        if choice == '1':
+            speak("You have selected to add a new passenger. Please fill in the passenger details on your screen.")
+            passenger_form()
+            print("Passenger added successfully!")
+            speak("Passenger added successfully! You can check the passenger details by selecting option 3 from the menu.")
+            
+
+        elif choice == '2':
+            train_form()
+            print("Train added successfully!")
+            speak("Train added successfully! You can check the train details by selecting option 4 from the menu.")
+            
+
+        elif choice == '3':
+            passenger_details()
+            print("Done checking passenger details.")
+            speak("You can check the passenger details by selecting option 3 from the menu. Please select option 4 to check train details.")
+
+        elif choice == '4':
+            train_details()
+            print("Done checking train details.")
+            speak("You can check the train details by selecting option 4 from the menu.")
+
+        elif choice == '5':
+            contact_support()
+            speak ("You have contacted support. Please wait while we connect you to a support representative.")
+
+        elif choice == '6':
+            print("Exiting the system. Goodbye!")
+            speak("Exiting the system. Goodbye!")
+            break  # FIX: break only on explicit Exit choice
+
+        else:
+            print("Invalid choice. Please try again.")
+            # FIX: no break here — loop continues on invalid input
+            
+        
+
+    # FIX: close connection ONCE, only after the menu loop ends
+    cursor.close()
+    conn.close()
