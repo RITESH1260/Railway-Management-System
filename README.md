@@ -1,4 +1,4 @@
-# Railway-Management-System
+#Railway-System-Python-MySQL
 A professional and user-friendly Railway Management System developed using Python and SQL Database. This project is designed to simplify railway operations such as ticket booking, passenger management, train information tracking, and customer record handling. The system provides an efficient way to manage railway services digitally with a simple and interactive interface.
 
 🚆 Project Features: 
