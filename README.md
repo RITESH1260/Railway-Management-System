@@ -23,7 +23,6 @@ This project helps manage passenger information, train details, database operati
 
 - Python
 - MySQL
-- Pandas
 - SpeechRecognition
 - Pyttsx3
 - Datetime Module
